@@ -47,6 +47,23 @@ func (m *ConcurrentMap) Set(key string, value interface{}) {
 	shard.Unlock()
 }
 
+//return whether key was in hashmap
+func (m *ConcurrentMap) SetOnlyIfAbsent(key string, value interface{}) bool {
+	// Get shard
+	shard := m.GetShard(key)
+	shard.Lock()
+
+	// See if element is within shard.
+	var ok bool
+	if _, ok = shard.items[key]; !ok {
+		shard.items[key] = action()
+	}
+
+	shard.Unlock()
+
+	return ok
+}
+
 // Retrieves an element from map under given key.
 func (m ConcurrentMap) Get(key string) (interface{}, bool) {
 	// Get shard
@@ -82,22 +99,6 @@ func (m *ConcurrentMap) Has(key string) bool {
 	_, ok := shard.items[key]
 
 	shard.RUnlock()
-
-	return ok
-}
-
-func (m *ConcurrentMap) SetIfAbsent(key string, value interface{}) bool {
-	// Get shard
-	shard := m.GetShard(key)
-	shard.Lock()
-
-	// See if element is within shard.
-	var ok bool
-	if _, ok = shard.items[key]; !ok {
-		shard.items[key] = value
-	}
-
-	shard.Unlock()
 
 	return ok
 }
@@ -198,6 +199,22 @@ func (m ConcurrentMap) Update(key string, action func(oldVal interface{}) interf
 	} else {
 		o = shard.items[key]
 		shard.items[key] = action(o)
+	}
+
+	shard.Unlock()
+
+	return o
+}
+
+//update only
+func (m ConcurrentMap) UpdateOnlyIfAbsent(key string, action func() interface{}) interface{} {
+	shard := m.GetShard(key)
+
+	var o interface{}
+	shard.Lock()
+
+	if _, ok := shard.items[key]; !ok {
+		shard.items[key] = action()
 	}
 
 	shard.Unlock()

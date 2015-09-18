@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-var SHARD_COUNT = 32
+var SHARD_COUNT = 1024
 
 // TODO: Add Keys function which returns an array of keys for the map.
 

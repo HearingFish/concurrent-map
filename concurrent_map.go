@@ -207,10 +207,9 @@ func (m ConcurrentMap) Update(key string, action func(oldVal interface{}) interf
 }
 
 //update only
-func (m ConcurrentMap) UpdateOnlyIfAbsent(key string, action func() interface{}) interface{} {
+func (m ConcurrentMap) UpdateOnlyIfAbsent(key string, action func() interface{}) {
 	shard := m.GetShard(key)
 
-	var o interface{}
 	shard.Lock()
 
 	if _, ok := shard.items[key]; !ok {
@@ -218,8 +217,6 @@ func (m ConcurrentMap) UpdateOnlyIfAbsent(key string, action func() interface{})
 	}
 
 	shard.Unlock()
-
-	return o
 }
 
 // Concurrent map uses Interface{} as its value, therefor JSON Unmarshal

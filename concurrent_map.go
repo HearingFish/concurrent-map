@@ -41,8 +41,10 @@ func (m *ConcurrentMap) Set(key string, value interface{}) {
 	// Get map shard.
 	shard := m.GetShard(key)
 	shard.Lock()
-	defer shard.Unlock()
+
 	shard.items[key] = value
+
+	shard.Unlock()
 }
 
 // Retrieves an element from map under given key.
@@ -50,10 +52,11 @@ func (m ConcurrentMap) Get(key string) (interface{}, bool) {
 	// Get shard
 	shard := m.GetShard(key)
 	shard.RLock()
-	defer shard.RUnlock()
 
 	// Get item from shard.
 	val, ok := shard.items[key]
+
+	shard.RUnlock()
 	return val, ok
 }
 
@@ -74,10 +77,12 @@ func (m *ConcurrentMap) Has(key string) bool {
 	// Get shard
 	shard := m.GetShard(key)
 	shard.RLock()
-	defer shard.RUnlock()
 
 	// See if element is within shard.
 	_, ok := shard.items[key]
+
+	shard.RUnlock()
+
 	return ok
 }
 
@@ -86,8 +91,10 @@ func (m *ConcurrentMap) Remove(key string) {
 	// Try to get shard.
 	shard := m.GetShard(key)
 	shard.Lock()
-	defer shard.Unlock()
+
 	delete(shard.items, key)
+
+	shard.Unlock()
 }
 
 // Checks if map is empty.
@@ -147,6 +154,25 @@ func (m ConcurrentMap) MarshalJSON() ([]byte, error) {
 		tmp[item.Key] = item.Val
 	}
 	return json.Marshal(tmp)
+}
+
+//Update val of key
+func (m ConcurrentMap) Update(key string, action func(oldVal interface{}) interface{}) interface{} {
+	shard := m.GetShard(key)
+
+	var o interface{}
+	shard.Lock()
+
+	if _, ok := shard.items[key]; !ok {
+		shard.items[key] = action(nil)
+	} else {
+		o = shard.items[key]
+		shard.items[key] = action(o)
+	}
+
+	shard.Unlock()
+
+	return o
 }
 
 // Concurrent map uses Interface{} as its value, therefor JSON Unmarshal

@@ -109,21 +109,17 @@ type Tuple struct {
 }
 
 // Returns an iterator which could be used in a for range loop.
-func (m ConcurrentMap) Iter() <-chan Tuple {
-	ch := make(chan Tuple)
-	go func() {
-		// Foreach shard.
-		for _, shard := range m {
-			// Foreach key, value pair.
-			shard.RLock()
-			for key, val := range shard.items {
-				ch <- Tuple{key, val}
-			}
-			shard.RUnlock()
+func (m ConcurrentMap) Iter(ch chan Tuple) {
+
+	// Foreach shard.
+	for _, shard := range m {
+		// Foreach key, value pair.
+		shard.RLock()
+		for key, val := range shard.items {
+			ch <- Tuple{key, val}
 		}
-		close(ch)
-	}()
-	return ch
+		shard.RUnlock()
+	}
 }
 
 // Returns a buffered iterator which could be used in a for range loop.

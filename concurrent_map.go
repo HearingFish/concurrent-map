@@ -1,6 +1,7 @@
 package cmap
 
 import (
+	"encoding/json"
 	"hash/fnv"
 	"sync"
 )
@@ -108,14 +109,31 @@ type Tuple struct {
 }
 
 // Returns an iterator which could be used in a for range loop.
-func (m ConcurrentMap) Iter(ch chan Tuple) {
+func (m ConcurrentMap) Iter() <-chan Tuple {
+	ch := make(chan Tuple)
+	go func() {
+		// Foreach shard.
+		for _, shard := range m {
+			// Foreach key, value pair.
+			shard.RLock()
+			for key, val := range shard.items {
+				ch <- Tuple{key, val}
+			}
+			shard.RUnlock()
+		}
+		close(ch)
+	}()
+	return ch
+}
+
+func (m ConcurrentMap) IterValue(ch chan interface{}) {
 
 	// Foreach shard.
 	for _, shard := range m {
 		// Foreach key, value pair.
 		shard.RLock()
 		for key, val := range shard.items {
-			ch <- Tuple{key, val}
+			ch <- val
 		}
 		shard.RUnlock()
 	}
@@ -137,6 +155,18 @@ func (m ConcurrentMap) IterBuffered() <-chan Tuple {
 		close(ch)
 	}()
 	return ch
+}
+
+//Reviles ConcurrentMap "private" variables to json marshal.
+func (m ConcurrentMap) MarshalJSON() ([]byte, error) {
+	// Create a temporary map, which will hold all item spread across shards.
+	tmp := make(map[string]interface{})
+
+	// Insert items to temporary map.
+	for item := range m.Iter() {
+		tmp[item.Key] = item.Val
+	}
+	return json.Marshal(tmp)
 }
 
 //Update val of key

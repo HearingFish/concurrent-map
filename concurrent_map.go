@@ -56,7 +56,7 @@ func (m *ConcurrentMap) SetOnlyIfAbsent(key string, value interface{}) bool {
 	// See if element is within shard.
 	var ok bool
 	if _, ok = shard.items[key]; !ok {
-		shard.items[key] = action()
+		shard.items[key] = value
 	}
 
 	shard.Unlock()

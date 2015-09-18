@@ -116,7 +116,7 @@ func (m ConcurrentMap) Iter() <-chan Tuple {
 		for _, shard := range m {
 			// Foreach key, value pair.
 			shard.RLock()
-			for _, val := range shard.items {
+			for key, val := range shard.items {
 				ch <- Tuple{key, val}
 			}
 			shard.RUnlock()
@@ -132,7 +132,7 @@ func (m ConcurrentMap) IterValue(ch chan interface{}) {
 	for _, shard := range m {
 		// Foreach key, value pair.
 		shard.RLock()
-		for key, val := range shard.items {
+		for _, val := range shard.items {
 			ch <- val
 		}
 		shard.RUnlock()

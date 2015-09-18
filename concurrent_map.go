@@ -86,6 +86,22 @@ func (m *ConcurrentMap) Has(key string) bool {
 	return ok
 }
 
+func (m *ConcurrentMap) SetIfAbsent(key string) bool {
+	// Get shard
+	shard := m.GetShard(key)
+	shard.Lock()
+
+	// See if element is within shard.
+	var ok bool
+	if _, ok = shard.items[key]; !ok {
+		shard.items[key] = value
+	}
+
+	shard.Unlock()
+
+	return ok
+}
+
 // Removes an element from the map.
 func (m *ConcurrentMap) Remove(key string) {
 	// Try to get shard.

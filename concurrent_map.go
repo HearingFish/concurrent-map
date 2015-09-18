@@ -147,11 +147,12 @@ func (m ConcurrentMap) IterValue(ch chan interface{}) {
 	// Foreach shard.
 	for _, shard := range m {
 		// Foreach key, value pair.
-		shard.RLock()
-		for _, val := range shard.items {
+		shard.Lock()
+		for key, val := range shard.items {
 			ch <- val
+			delete(shard.items, key)
 		}
-		shard.RUnlock()
+		shard.Unlock()
 	}
 }
 

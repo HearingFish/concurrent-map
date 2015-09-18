@@ -140,18 +140,6 @@ func (m ConcurrentMap) IterBuffered() <-chan Tuple {
 	return ch
 }
 
-//Reviles ConcurrentMap "private" variables to json marshal.
-func (m ConcurrentMap) MarshalJSON() ([]byte, error) {
-	// Create a temporary map, which will hold all item spread across shards.
-	tmp := make(map[string]interface{})
-
-	// Insert items to temporary map.
-	for item := range m.Iter() {
-		tmp[item.Key] = item.Val
-	}
-	return json.Marshal(tmp)
-}
-
 //Update val of key
 func (m ConcurrentMap) Update(key string, action func(oldVal interface{}) interface{}) interface{} {
 	shard := m.GetShard(key)

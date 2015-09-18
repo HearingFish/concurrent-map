@@ -86,7 +86,7 @@ func (m *ConcurrentMap) Has(key string) bool {
 	return ok
 }
 
-func (m *ConcurrentMap) SetIfAbsent(key string) bool {
+func (m *ConcurrentMap) SetIfAbsent(key string, value interface{}) bool {
 	// Get shard
 	shard := m.GetShard(key)
 	shard.Lock()

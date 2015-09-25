@@ -143,14 +143,14 @@ func (m ConcurrentMap) Iter() <-chan Tuple {
 	return ch
 }
 
-func (m ConcurrentMap) IterTuple(ch chan *Tuple) {
+func (m ConcurrentMap) IterValue(ch chan interface{}) {
 
 	// Foreach shard.
 	for _, shard := range m {
 		// Foreach key, value pair.
 		shard.Lock()
 		for key, val := range shard.items {
-			ch <- &Tuple{key, val}
+			ch <- val
 			delete(shard.items, key)
 		}
 		shard.Unlock()
